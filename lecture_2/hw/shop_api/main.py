@@ -1,8 +1,9 @@
 import random
-from typing import Annotated
+import uuid
+from typing import Annotated, List, Dict
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.openapi.models import Response
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
@@ -115,3 +116,44 @@ def patch_item(request: PatchItemRequest, session: Annotated[Session, Depends(ge
 
     session.commit()
     return Item(id=item.id, name=item.name, price=item.price, deleted=item.deleted)
+
+class Socket:
+    def __init__(self):
+        self.rooms: Dict[str, List[WebSocket]] = {}
+        self.users: Dict[WebSocket, str] = {}
+
+    async def connect(self, ws: WebSocket, room: str):
+        await ws.accept()
+        user_id = str(uuid.uuid4())
+        self.users[ws] = user_id
+        if room not in self.rooms:
+            self.rooms[room] = []
+        self.rooms[room].append(ws)
+        print(f"{id} зашел в комнату {room}")
+
+    def disconnect(self, ws: WebSocket, room: str):
+        self.rooms[room].remove(ws)
+        del self.users[ws]
+        if not self.rooms[room]:
+            del self.rooms[room]
+        print(f"Пользователь вышел из команты {room}")
+
+    async def send(self, msg: str, room: str, sender: WebSocket):
+        for ws in self.rooms.get(room, []):
+            if ws != sender:
+                await ws.send_text(msg)
+        print(f"Сообщение отправлено в комнату {room}")
+
+socket = Socket()
+
+@app.websocket("/chat/{room}")
+async def chat(ws: WebSocket, room: str):
+    await socket.connect(ws, room)
+    user_id = socket.users[ws]
+    try:
+        while True:
+            text = await ws.receive_text()
+            msg = f"{user_id} :: {text}"
+            await socket.send(msg, room, ws)
+    except WebSocketDisconnect:
+        socket.disconnect(ws, room)
