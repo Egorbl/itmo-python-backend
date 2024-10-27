@@ -3,7 +3,7 @@ import json
 
 async def fibonacci(scope, recieve, send) -> None:
     if scope["method"] != "GET":
-        await send_answer(send, 404, "404 Not Found")
+        await send_answer(send, 404, "404 Not Found", endpoint="/fibonacci")
         return
 
     path = scope["path"]
@@ -11,13 +11,13 @@ async def fibonacci(scope, recieve, send) -> None:
     path = path.lstrip("/")
 
     if not is_int(path):
-        await send_answer(send, 422, "422 Unprocessable Entity")
+        await send_answer(send, 422, "422 Unprocessable Entity", endpoint="/fibonacci")
         return
 
     n = int(path)
 
     if n < 0:
-        await send_answer(send, 400, "400 Bad Request")
+        await send_answer(send, 400, "400 Bad Request", endpoint="/fibonacci")
         return
 
     n1, n2 = 1, 1
@@ -28,4 +28,4 @@ async def fibonacci(scope, recieve, send) -> None:
         n2 = 0
 
     result = json.dumps({"result": n2})
-    await send_answer(send, 200, result, content_type="application/json")
+    await send_answer(send, 200, result, content_type="application/json", endpoint="/fibonacci")

@@ -1,6 +1,7 @@
 from lecture_1.hw.helper.helper import send_answer
 from lecture_1.hw.src.factorial import factorial
 from lecture_1.hw.src.fibonacci import fibonacci
+from lecture_1.hw.src.metrics import metrics_endpoint
 from lecture_1.hw.src.mean import mean
 
 async def app(scope, receive, send) -> None:
@@ -15,6 +16,9 @@ async def app(scope, receive, send) -> None:
             return
         if path == "/mean":
             await mean(scope, receive, send)
+            return
+        if path == "/metrics":
+            await metrics_endpoint(scope, receive, send)
             return
 
         await send_answer(send, 404, "404 Not Found")

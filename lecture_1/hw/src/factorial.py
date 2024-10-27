@@ -3,7 +3,7 @@ import json
 
 async def factorial(scope, recieve, send) -> None:
     if scope["method"] != "GET":
-        await send_answer(send, 404, "404 Not Found")
+        await send_answer(send, 404, "404 Not Found", "/factorial")
         return
 
     n = scope.get("query_string")
